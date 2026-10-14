@@ -135,6 +135,7 @@ def optimize(symbol: str, strategy: str, grid: dict[str, list], *, metric: str =
 
     split（例如 0.7）會把資料切成前 70% 樣本內（用來挑參數）與後 30% 樣本外（用來驗證），
     以降低過度最佳化的風險。回傳 (樣本內排名表, 樣本外驗證表或 None)。
+    兩張表的 skipped 欄位是買進訊號因資金不足一個交易單位而未能進場的次數。
     """
     strat = get_strategy(strategy)
     prices, _ = load_prices(symbol, start, end, csv=csv, source=source, offline=offline)
@@ -159,7 +160,7 @@ def optimize(symbol: str, strategy: str, grid: dict[str, list], *, metric: str =
         m = compute_metrics(res, risk_free=risk_free)
         rows.append({**params, **{k: m[k] for k in
                                   ("total_return", "cagr", "sharpe", "max_drawdown", "calmar",
-                                   "win_rate", "num_trades")}})
+                                   "win_rate", "num_trades")}, "skipped": res.skipped_entries})
     table = pd.DataFrame(rows)
     if table.empty:
         raise ValueError("沒有任何有效的參數組合")
@@ -175,5 +176,6 @@ def optimize(symbol: str, strategy: str, grid: dict[str, list], *, metric: str =
         m = compute_metrics(res, risk_free=risk_free)
         oos_table = pd.DataFrame([{**best, "期間": f"{oos.index[0]:%Y-%m-%d} ~ {oos.index[-1]:%Y-%m-%d}",
                                    **{k: m[k] for k in ("total_return", "cagr", "sharpe", "max_drawdown",
-                                                        "num_trades")}}])
+                                                        "num_trades")},
+                                   "skipped": res.skipped_entries}])
     return table, oos_table

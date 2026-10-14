@@ -11,22 +11,33 @@
 
 ## 快速開始
 
-```bash
+安裝：
+
+```
 git clone https://github.com/brian20040424/white.git
 cd white
 pip install -r requirements.txt
+```
 
-python -m twbacktest fetch 2330 TAIEX          # 下載資料
-python -m twbacktest run 2330                  # 20/60 日均線交叉回測台積電
-python -m twbacktest run 2330 0050 -s macd     # 多檔比較
-python -m twbacktest optimize 2330 -g fast=5:30:5 -g slow=40:120:20 --split 0.7
+下載台積電與大盤資料，再用 20/60 日均線交叉回測台積電（`--lot 1` 允許零股，避免高價股買不起一張）：
+
+```
+python -m twbacktest fetch 2330 TAIEX
+python -m twbacktest run 2330 --lot 1
+```
+
+多檔比較、參數最佳化：
+
+```
+python -m twbacktest run 2330 0050 -s macd --lot 1
+python -m twbacktest optimize 2330 -g fast=5:30:5 -g slow=40:120:20 --split 0.7 --lot 1
 ```
 
 完整說明請看 **[使用手冊](docs/使用手冊.md)**。
 
 ## 測試
 
-```bash
+```
 pip install pytest
 python -m pytest
 ```
