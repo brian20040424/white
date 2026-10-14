@@ -220,3 +220,17 @@ def test_cli_run_and_optimize(tmp_path, capsys):
     assert main(["optimize", "2330", "--csv", str(p), "-g", "fast=5:15:5", "-g", "slow=40,60",
                  "--split", "0.7", "--lot", "1"]) == 0
     assert "樣本外" in capsys.readouterr().out
+
+
+def test_optimize_warns_when_cash_cannot_buy_a_lot(tmp_path, capsys):
+    df = random_walk(600) * 20          # 股價約 2000 元，100 萬買不起一張
+    p = tmp_path / "s.csv"
+    df.to_csv(p, index_label="Date")
+    table, oos = optimize("2330", "sma_cross", {"fast": [5, 10], "slow": [40]}, csv=str(p), split=0.7)
+    assert (table["skipped"] > 0).all() and (table["num_trades"] == 0).all()
+    assert oos["skipped"].iloc[0] > 0
+
+    assert main(["optimize", "2330", "--csv", str(p), "-g", "fast=5,10", "-g", "slow=40", "--split", "0.7"]) == 0
+    out = capsys.readouterr().out
+    assert "資金不足" in out and "--lot 1" in out
+    assert "樣本外 0 筆交易是因為買不起" in out

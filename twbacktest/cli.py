@@ -142,6 +142,12 @@ def cmd_run(a) -> int:
     return 0 if summary else 1
 
 
+def _warn_skipped(count: int, scope: str) -> None:
+    if count:
+        print(f"\n⚠ {scope}有 {int(count)} 次買進訊號因資金不足一個交易單位而未進場（skipped 欄），"
+              f"結果會被低估。可改用 --lot 1（零股）或提高 --capital 重跑。")
+
+
 def cmd_optimize(a) -> int:
     grid = _parse_grid(a.grid)
     table, oos = optimize(a.symbol, a.strategy, grid, metric=a.metric, split=a.split, start=a.start,
@@ -161,6 +167,12 @@ def cmd_optimize(a) -> int:
             o[k] = o[k].map(lambda v, k=k: format_value(k, v))
         print("\n=== 最佳參數在樣本外的表現 ===")
         print(o.to_string(index=False))
+    _warn_skipped(show["skipped"].sum(), "樣本內前幾名")
+    if oos is not None:
+        oos_skipped = int(oos["skipped"].iloc[0])
+        _warn_skipped(oos_skipped, "樣本外")
+        if oos_skipped and oos["num_trades"].iloc[0] == 0:
+            print("  樣本外 0 筆交易是因為買不起一個交易單位，不代表這組參數沒有訊號。")
     if a.save:
         table.to_csv(a.save, index=False, encoding="utf-8-sig")
         print(f"\n完整結果已存到 {a.save}")
